@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "advtweakery",
+    "name": "Advanced Tweakery",
+    "description": "A CraftTweaker addon for Advanced Rocketry.",
+    "version": "0.1",
+    "mcversion": "1.12.2",
+    "url": "https://github.com/ProjectHDS/AdvancedTweakery/",
+    "updateUrl": "",
+    "authorList": ["GBLodb"],
+    "dependencies": ["crafttweaker", "advancedrocketry"],
+  }
+]
