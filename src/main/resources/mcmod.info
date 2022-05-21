@@ -8,6 +8,6 @@
     "url": "https://github.com/ProjectHDS/AdvancedTweakery/",
     "updateUrl": "",
     "authorList": ["GBLodb"],
-    "dependencies": ["crafttweaker", "advancedrocketry"],
+    "dependencies": ["crafttweaker", "advancedrocketry"]
   }
 ]
