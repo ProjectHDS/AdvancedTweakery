@@ -5,19 +5,24 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 import zmaster587.libVulpes.interfaces.IRecipe;
 import zmaster587.libVulpes.recipe.RecipesMachine;
+import zmaster587.libVulpes.tile.TileEntityMachine;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 
 public class ImplBaseAction {
+  public static final RecipesMachine recipeMachine = RecipesMachine.getInstance();
 
     public static class ImplBaseActionAdd extends BaseAction {
-        private Class<?> recipeClass;
-        private Object[] inputs;
-        private Object[] outputs;
-        private int time;
-        private int power;
+    private final Class<?> recipeClass;
+    private final Object[] inputs;
+    private final Object[] outputs;
+    private final int time;
+    private final int power;
 
-        public ImplBaseActionAdd(Class recipeClass, Object[] outputs, int time, int power, Object[] inputs) {
+    public ImplBaseActionAdd(
+        Class<?> recipeClass, Object[] outputs, int time, int power, Object[] inputs) {
             super(recipeClass.getName());
             this.recipeClass = recipeClass;
             this.outputs = outputs;
@@ -26,18 +31,19 @@ public class ImplBaseAction {
             this.inputs = inputs;
         }
 
-
         @Override
         public void apply() {
-            RecipesMachine.getInstance().addRecipe(recipeClass, outputs, time, power, inputs);
+      Object[] ins = Utils.mapExtract(Utils.inputConvert(inputs));
+      Object[] outs = Utils.mapExtract(Utils.outputConvert(outputs));
+      recipeMachine.addRecipe(recipeClass, outs, time, power, ins);
         }
     }
 
     public static class ImplBaseActionRemove extends BaseAction {
-        private Class<?> recipeClass;
-        private Object[] outputs;
+    private final Class<?> recipeClass;
+    private final Object[] outputs;
 
-        public ImplBaseActionRemove(Class recipeClass, Object[] outputs) {
+    public ImplBaseActionRemove(Class<?> recipeClass, Object[] outputs) {
             super(recipeClass.getName());
             this.recipeClass = recipeClass;
             this.outputs = outputs;
@@ -45,53 +51,68 @@ public class ImplBaseAction {
 
         @Override
         public void apply() {
-            List<IRecipe> recipeList = RecipesMachine.getInstance().getRecipes(recipeClass);
+      List<?> recipeList = Utils.getRecipesForMachine(recipeClass);
+      HashMap<String, List<?>> outMap = Utils.outputConvert(outputs);
+      ListIterator<?> recipeIterator = recipeList.listIterator();
 
-            for (IRecipe recipe : recipeList) {
-                List<ItemStack> itemOutputs = null;
-                List<FluidStack> fluidOutputs = null;
-                for (Object obj : outputs) {
-                    if (obj instanceof FluidStack) {
-                        fluidOutputs.add((FluidStack) obj);
-                    } else itemOutputs.add((ItemStack) obj);
-                }
+      IRecipe nowRecipe =
+          new IRecipe() {
+            @Override
+            public List<ItemStack> getOutput() {
+              return (List<ItemStack>) outMap.get("items");
+            }
 
-                IRecipe inRecipe = new IRecipe() {
-                    @Override
-                    public List<ItemStack> getOutput() {return itemOutputs;}
-                    @Override
-                    public List<FluidStack> getFluidOutputs() {return fluidOutputs;}
-                    @Override
-                    public List<List<ItemStack>> getIngredients() {return null;}
-                    @Override
-                    public List<FluidStack> getFluidIngredients() {return null;}
-                    @Override
-                    public int getTime() {return 0;}
-                    @Override
-                    public int getPower() {return 0;}
-                    @Override
-                    public String getOreDictString(int i) {return null;}
-                };
+            @Override
+            public List<FluidStack> getFluidOutputs() {
+              return (List<FluidStack>) outMap.get("fluids");
+            }
 
-                if (Utils.matchRecipe(recipe, inRecipe)) {
-                    recipeList.remove(recipe);
+            @Override
+            public List<List<ItemStack>> getIngredients() {
+              return null;
+            }
+
+            @Override
+            public List<FluidStack> getFluidIngredients() {
+              return null;
+            }
+
+            @Override
+            public int getTime() {
+              return 0;
+            }
+
+            @Override
+            public int getPower() {
+              return 0;
+            }
+
+            @Override
+            public String getOreDictString(int i) {
+              return (String) outMap.get("items").get(i);
+            }
+          };
+
+      while (recipeIterator.hasNext()) {
+        IRecipe recipe = (IRecipe) recipeIterator.next();
+        if (Utils.matchRecipe(nowRecipe, recipe)) {
+          recipeIterator.remove();
                 }
             }
         }
     }
 
     public static class ImplBaseActionAll extends BaseAction {
-        private Class recipeClass;
+    private final Class<?> recipeClass;
 
-        public ImplBaseActionAll(Class recipeClass) {
+    public ImplBaseActionAll(Class<?> recipeClass) {
             super(recipeClass.getName());
             this.recipeClass = recipeClass;
         }
 
         @Override
         public void apply() {
-            RecipesMachine.getInstance().clearRecipes(recipeClass);
+      RecipesMachine.getInstance().clearRecipes((Class<? extends TileEntityMachine>) recipeClass);
         }
     }
-
 }
