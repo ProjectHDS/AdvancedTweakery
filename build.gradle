@@ -2,63 +2,95 @@ buildscript {
     repositories {
         mavenCentral()
         maven {
-            name = "forge"
-            url = "https://maven.minecraftforge.net/"
+            name = 'ForgeGradle 5'
+            url = 'https://maven.minecraftforge.net'
+        }
+        maven {
+            name = 'FancyGradle'
+            url = 'https://gitlab.com/api/v4/projects/26758973/packages/maven'
         }
     }
     dependencies {
-        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath group: 'wtf.gofancy.fancygradle', name: 'wtf.gofancy.fancygradle.gradle.plugin', version: '1.1.+'
     }
 }
 
-apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'wtf.gofancy.fancygradle'
 
-group = 'projecthds'
-version = '0.1'
-archivesBaseName = 'advtweakery'
+version = project.mod_version
+group = project.maven_group
+archivesBaseName = project.archives_base_name
 
-// change FG2's default maven url to the new one.
-repositories.each {
-    if (it instanceof MavenArtifactRepository && it.url.toString() == "https://files.minecraftforge.net/maven") {
-        it.url = "https://maven.minecraftforge.net/"
-    }
-}
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
 minecraft {
-    version = project.forgeVersion
-    mappings = project.mcpVersion
-    runDir = "run"
+
+    mappings channel: 'stable', version: '39-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run/client')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+            workingDirectory project.file('run/server')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                '${archives_base_name}' {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
 }
 
 repositories {
-    mavenCentral()
     maven {
-        name = 'blamejared'
-        url = 'https://maven.blamejared.com/'
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com'
     }
     maven {
-        name = 'cursemaven'
-        url = 'https://cfa2.cursemaven.com/'
+        name = 'CurseMaven'
+        url = 'https://cfa2.cursemaven.com'
     }
 }
 
 dependencies {
-    deobfCompile "CraftTweaker2:CraftTweaker2-MC1120-Main:1.12-4.1.20.675"
-    deobfCompile "com.blamejared:MTLib:3.0.5.15"
-    deobfCompile "curse.maven:libvulpes-236541:3775180"
-    deobfCompile "curse.maven:advanced-rocketry-236542:3764115"
+    def crtDep = 'CraftTweaker2:CraftTweaker2-MC1120-Main:1.12-4.1.20.678'
+
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+    compileOnly fg.deobf('CraftTweaker2:ZenScript:4.1.20.678')
+    compileOnly fg.deobf('CraftTweaker2:CraftTweaker2-API:4.1.20.678')
+
+    implementation crtDep
+    //compileOnly(crtDep)
+    //runtimeOnly(fg.deobf(crtDep))
+    implementation fg.deobf('com.blamejared:MTLib:3.0.5.15')
+    implementation fg.deobf('curse.maven:LibVulpes-236541:3801015')
+    implementation fg.deobf('curse.maven:AdvancedRocketry-236542:3801020')
 }
 
-processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include "mcmod.info"
-        expand "version": project.version, "mcversion": project.minecraft.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude "mcmod.info"
+fancyGradle {
+    patches {
+        resources
+        coremods
     }
 }
+
+jar {
+    manifest {
+        def attribute_map = [:]
+        attributes(attribute_map)
+    }
+}
+
+jar.finalizedBy('reobfJar')
