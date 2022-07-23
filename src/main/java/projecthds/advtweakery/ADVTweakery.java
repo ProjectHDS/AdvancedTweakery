@@ -31,7 +31,7 @@ public class ADVTweakery {
             LATE_ADDITIONS.forEach(CraftTweakerAPI::apply);
         } catch (Exception exception) {
             exception.printStackTrace();
-      CraftTweakerAPI.logError("Error while applying action", exception);
+            CraftTweakerAPI.logError("Error while applying action", exception);
         }
         LATE_REMOVALS.clear();
         LATE_ADDITIONS.clear();
